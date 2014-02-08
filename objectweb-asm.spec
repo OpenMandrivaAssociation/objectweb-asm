@@ -32,7 +32,7 @@
 
 Name:           objectweb-asm
 Version:        3.1
-Release:        0.5.2
+Release:        0.5.3
 Epoch:          0
 Summary:        A code manipulation tool to implement adaptable systems
 License:        BSD
