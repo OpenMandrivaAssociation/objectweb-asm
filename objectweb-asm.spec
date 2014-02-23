@@ -1,3 +1,4 @@
+%{?_javapackages_macros:%_javapackages_macros}
 # Copyright (c) 2000-2008, JPackage Project
 # All rights reserved.
 #
@@ -28,26 +29,16 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-%define section free
-
 Name:           objectweb-asm
-Version:        3.1
-Release:        0.5.3
+Version:        3.3.1
+Release:        8.1%{?dist}
 Epoch:          0
 Summary:        A code manipulation tool to implement adaptable systems
 License:        BSD
 URL:            http://asm.objectweb.org/
-Group:          Development/Java
-Source0:        http://download.forge.objectweb.org/asm/asm-3.1.tar.gz
-Source1:        http://repo1.maven.org/maven2/asm/asm/3.1/asm-3.1.pom
-Source2:        http://repo1.maven.org/maven2/asm/asm-analysis/3.1/asm-analysis-3.1.pom
-Source3:        http://repo1.maven.org/maven2/asm/asm-commons/3.1/asm-commons-3.1.pom
-Source4:        http://repo1.maven.org/maven2/asm/asm-tree/3.1/asm-tree-3.1.pom
-Source5:        http://repo1.maven.org/maven2/asm/asm-util/3.1/asm-util-3.1.pom
-Source6:        http://repo1.maven.org/maven2/asm/asm-xml/3.1/asm-xml-3.1.pom
-Source7:        http://repo1.maven.org/maven2/asm/asm-all/3.1/asm-all-3.1.pom
-Source8:        http://repo1.maven.org/maven2/asm/asm-parent/3.1/asm-parent-3.1.pom
-Source9:        asm-MANIFEST.MF
+
+Source0:        http://download.forge.objectweb.org/asm/asm-3.3.1.tar.gz
+Source1:        asm-MANIFEST.MF
 Patch0:         objectweb-asm-no-classpath-in-manifest.patch
 # Needed by asm-xml.jar
 Requires:       xml-commons-jaxp-1.3-apis
@@ -60,14 +51,13 @@ BuildRequires:  objectweb-anttask
 BuildRequires:  xml-commons-jaxp-1.3-apis
 BuildRequires:  zip
 BuildArch:      noarch
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 
 %description
 ASM is a code manipulation tool to implement adaptable systems.
 
 %package        javadoc
 Summary:        Javadoc for %{name}
-Group:          Development/Java
+
 
 %description    javadoc
 Javadoc for %{name}.
@@ -78,80 +68,132 @@ Javadoc for %{name}.
 perl -pi -e 's/\r$//g' LICENSE.txt README.txt
 
 mkdir META-INF
-cp -p %{SOURCE9} META-INF/MANIFEST.MF
+cp -p %{SOURCE1} META-INF/MANIFEST.MF
 
 %build
-export CLASSPATH=
-export OPT_JAR_LIST=:
 ant -Dobjectweb.ant.tasks.path=$(build-classpath objectweb-anttask) jar jdoc
 
 %install
-rm -rf $RPM_BUILD_ROOT
-
 # jars
 install -d -m 755 $RPM_BUILD_ROOT%{_javadir}/%{name}
+install -d -m 755 $RPM_BUILD_ROOT%{_mavenpomdir}
 
 for jar in output/dist/lib/*.jar; do
 install -m 644 ${jar} \
-$RPM_BUILD_ROOT%{_javadir}/%{name}/`basename ${jar}`
+$RPM_BUILD_ROOT%{_javadir}/%{name}/`basename ${jar/-%{version}/}`
 done
 
 touch META-INF/MANIFEST.MF
 zip -u output/dist/lib/all/asm-all-%{version}.jar META-INF/MANIFEST.MF
 
-install -m 644 output/dist/lib/all/asm-all-%{version}.jar $RPM_BUILD_ROOT%{_javadir}/%{name}/
-
-(cd $RPM_BUILD_ROOT%{_javadir}/%{name} && for jar in *-%{version}*; do \
-ln -sf ${jar} ${jar/-%{version}/}; done)
+install -m 644 output/dist/lib/all/asm-all-%{version}.jar $RPM_BUILD_ROOT%{_javadir}/%{name}/asm-all.jar
+install -m 644 output/dist/lib/all/asm-all-%{version}.pom $RPM_BUILD_ROOT%{_mavenpomdir}/JPP.objectweb-asm-asm-all.pom
 
 # pom
-install -d -m 755 $RPM_BUILD_ROOT%{_datadir}/maven2/poms
-install -m 644 %{SOURCE1} $RPM_BUILD_ROOT%{_datadir}/maven2/poms/JPP.objectweb-asm-asm.pom
-%add_to_maven_depmap org.objectweb.asm asm %{version} JPP/objectweb-asm asm
-install -m 644 %{SOURCE2} $RPM_BUILD_ROOT%{_datadir}/maven2/poms/JPP.objectweb-asm-asm-analysis.pom
-%add_to_maven_depmap org.objectweb.asm asm-analysis %{version} JPP/objectweb-asm asm-analysis
-install -m 644 %{SOURCE3} $RPM_BUILD_ROOT%{_datadir}/maven2/poms/JPP.objectweb-asm-asm-commons.pom
-%add_to_maven_depmap org.objectweb.asm asm-commons %{version} JPP/objectweb-asm asm-commons
-install -m 644 %{SOURCE4} $RPM_BUILD_ROOT%{_datadir}/maven2/poms/JPP.objectweb-asm-asm-tree.pom
-%add_to_maven_depmap org.objectweb.asm asm-tree %{version} JPP/objectweb-asm asm-tree
-install -m 644 %{SOURCE5} $RPM_BUILD_ROOT%{_datadir}/maven2/poms/JPP.objectweb-asm-asm-util.pom
-%add_to_maven_depmap org.objectweb.asm asm-util %{version} JPP/objectweb-asm asm-util
-install -m 644 %{SOURCE6} $RPM_BUILD_ROOT%{_datadir}/maven2/poms/JPP.objectweb-asm-asm-xml.pom
-%add_to_maven_depmap org.objectweb.asm asm-xml %{version} JPP/objectweb-asm asm-xml
-install -m 644 %{SOURCE7} $RPM_BUILD_ROOT%{_datadir}/maven2/poms/JPP.objectweb-asm-asm-all.pom
-%add_to_maven_depmap org.objectweb.asm asm-all %{version} JPP/objectweb-asm asm-all
-install -m 644 %{SOURCE8} $RPM_BUILD_ROOT%{_datadir}/maven2/poms/JPP.objectweb-asm-asm-parent.pom
-%add_to_maven_depmap org.objectweb.asm asm-parent %{version} JPP/objectweb-asm asm-parent
+for pom in output/dist/lib/*.pom; do
+install -m 644 ${pom} $RPM_BUILD_ROOT%{_mavenpomdir}/JPP.objectweb-asm-`basename ${pom/-%{version}/}`
+done
+%add_maven_depmap JPP.objectweb-asm-asm.pom %{name}/asm.jar
+%add_maven_depmap JPP.objectweb-asm-asm-analysis.pom %{name}/asm-analysis.jar
+%add_maven_depmap JPP.objectweb-asm-asm-commons.pom %{name}/asm-commons.jar
+%add_maven_depmap JPP.objectweb-asm-asm-tree.pom %{name}/asm-tree.jar
+%add_maven_depmap JPP.objectweb-asm-asm-util.pom %{name}/asm-util.jar
+%add_maven_depmap JPP.objectweb-asm-asm-xml.pom %{name}/asm-xml.jar
+%add_maven_depmap JPP.objectweb-asm-asm-all.pom %{name}/asm-all.jar -a "org.eclipse.jetty.orbit:org.objectweb.asm"
+%add_maven_depmap JPP.objectweb-asm-asm-parent.pom
 
 # javadoc
-install -p -d -m 755 $RPM_BUILD_ROOT%{_javadocdir}/%{name}-%{version}
-cp -pr output/dist/doc/javadoc/user/* $RPM_BUILD_ROOT%{_javadocdir}/%{name}-%{version}
-ln -s %{name}-%{version} $RPM_BUILD_ROOT%{_javadocdir}/%{name}
-
-%post
-%update_maven_depmap
-
-%postun
-%update_maven_depmap
+install -p -d -m 755 $RPM_BUILD_ROOT%{_javadocdir}/%{name}
+cp -pr output/dist/doc/javadoc/user/* $RPM_BUILD_ROOT%{_javadocdir}/%{name}
 
 %files
-%defattr(0644,root,root,0755)
 %doc LICENSE.txt README.txt
 %dir %{_javadir}/%{name}
 %{_javadir}/%{name}/*.jar
-%{_datadir}/maven2/*
+%{_mavenpomdir}/*
 %{_mavendepmapfragdir}/*
 
 %files javadoc
-%defattr(0644,root,root,0755)
-%{_javadocdir}/%{name}-%{version}
 %{_javadocdir}/%{name}
 
-
 %changelog
-* Wed Feb 18 2009 Jérôme Soyer <saispo@mandriva.org> 0:3.1-0.5.1mdv2009.1
-+ Revision: 342434
-- Fix Group
-- import objectweb-asm
+* Sat Aug 03 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0:3.3.1-8
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
 
+* Wed Mar  6 2013 Mikolaj Izdebski <mizdebsk@redhat.com> - 0:3.3.1-7
+- Make jetty orbit depmap point to asm-all jar
+- Resolves: rhbz#917625
 
+* Mon Mar  4 2013 Mikolaj Izdebski <mizdebsk@redhat.com> - 0:3.3.1-6
+- Add depmap for org.eclipse.jetty.orbit
+- Resolves: rhbz#917625
+
+* Thu Feb 14 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0:3.3.1-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
+
+* Fri Jul 20 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0:3.3.1-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
+
+* Fri Jan 13 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0:3.3.1-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
+
+* Fri Sep 16 2011 Alexander Kurtakov <akurtako@redhat.com> 0:3.3.1-2
+- Use poms produced by the build not foreign ones.
+- Adpat to current guidelines.
+
+* Mon Apr 04 2011 Chris Aniszczyk <zx@redhat.com> 0:3.3.1
+- Upgrade to 3.3.1
+
+* Tue Feb 08 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0:3.2-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
+
+* Tue Jul 13 2010 Orion Poplawski <orion@cora.nwra.com>  0:3.2.1-2
+- Change depmap parent id to asm (bug #606659)
+
+* Thu Apr 15 2010 Fernando Nasser <fnasser@redhat.com> 0:3.2.1
+- Upgrade to 3.2
+
+* Sat Jul 25 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0:3.1-7.1
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_12_Mass_Rebuild
+
+* Wed Feb 25 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0:3.1-6.1
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_11_Mass_Rebuild
+
+* Tue Oct 23 2008 David Walluck <dwalluck@redhat.com> 0:3.1-5.1
+- build for Fedora
+
+* Tue Oct 23 2008 David Walluck <dwalluck@redhat.com> 0:3.1-5
+- add OSGi manifest (Alexander Kurtakov)
+
+* Mon Oct 20 2008 David Walluck <dwalluck@redhat.com> 0:3.1-4
+- remove Class-Path from MANIFEST.MF
+- add unversioned javadoc symlink
+- remove javadoc scriptlets
+- fix directory ownership
+- remove build requirement on dos2unix
+
+* Fri Feb 08 2008 Ralph Apel <r.apel@r-apel.de> - 0:3.1-3jpp
+- Add poms and depmap frags with groupId of org.objectweb.asm !
+- Add asm-all.jar 
+- Add -javadoc Requires post and postun
+- Restore Vendor, Distribution
+
+* Thu Nov 22 2007 Fernando Nasser <fnasser@redhat.com> - 0:3.1-2jpp
+- Fix EOL of txt files
+- Add dependency on jaxp 
+
+* Thu Nov 22 2007 Fernando Nasser <fnasser@redhat.com> - 0:3.1-1jpp
+- Upgrade to 3.1
+
+* Wed Aug 22 2007 Fernando Nasser <fnasser@redhat.com> - 0:3.0-1jpp
+- Upgrade to 3.0
+- Rename to include objectweb- prefix as requested by ObjectWeb
+
+* Thu Jan 05 2006 Fernando Nasser <fnasser@redhat.com> - 0:2.1-2jpp
+- First JPP 1.7 build
+
+* Thu Oct 06 2005 Ralph Apel <r.apel at r-apel.de> 0:2.1-1jpp
+- Upgrade to 2.1
+
+* Fri Mar 11 2005 Sebastiano Vigna <vigna at acm.org> 0:2.0.RC1-1jpp
+- First release of the 2.0 line.
