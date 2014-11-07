@@ -1,122 +1,97 @@
 %{?_javapackages_macros:%_javapackages_macros}
-# Copyright (c) 2000-2008, JPackage Project
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-# 1. Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in the
-#    documentation and/or other materials provided with the
-#    distribution.
-# 3. Neither the name of the JPackage Project nor the names of its
-#    contributors may be used to endorse or promote products derived
-#    from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
+%{?scl:%scl_package objectweb-asm}
+%{!?scl:%global pkg_name %{name}}
 
-Name:           objectweb-asm
-Version:        3.3.1
-Release:        8.1%{?dist}
-Epoch:          0
-Summary:        A code manipulation tool to implement adaptable systems
+Name:           %{?scl_prefix}objectweb-asm
+Version:        5.0.3
+Release:        1%{?dist}
+Summary:        Java bytecode manipulation and analysis framework
 License:        BSD
-URL:            http://asm.objectweb.org/
-
-Source0:        http://download.forge.objectweb.org/asm/asm-3.3.1.tar.gz
-Source1:        asm-MANIFEST.MF
-Patch0:         objectweb-asm-no-classpath-in-manifest.patch
-# Needed by asm-xml.jar
-Requires:       xml-commons-jaxp-1.3-apis
-Requires(post): jpackage-utils >= 0:1.7.4
-Requires(postun): jpackage-utils >= 0:1.7.4
-BuildRequires:  jpackage-utils >= 0:1.7.4
-BuildRequires:  java-devel >= 0:1.5.0
-BuildRequires:  ant >= 0:1.6.5
-BuildRequires:  objectweb-anttask
-BuildRequires:  xml-commons-jaxp-1.3-apis
-BuildRequires:  zip
+URL:            http://asm.ow2.org/
 BuildArch:      noarch
 
+Source0:        http://download.forge.ow2.org/asm/asm-%{version}.tar.gz
+Source1:        http://www.apache.org/licenses/LICENSE-2.0.txt
+
+BuildRequires:  ant
+BuildRequires:  aqute-bnd
+BuildRequires:  maven-local
+%{?scl:Requires: %scl_runtime}
+
+Obsoletes:      %{?scl_prefix}objectweb-asm4 < 5
+Provides:       %{?scl_prefix}objectweb-asm4 = %{version}-%{release}
+
 %description
-ASM is a code manipulation tool to implement adaptable systems.
+ASM is an all purpose Java bytecode manipulation and analysis
+framework.  It can be used to modify existing classes or dynamically
+generate classes, directly in binary form.  Provided common
+transformations and analysis algorithms allow to easily assemble
+custom complex transformations and code analysis tools.
 
 %package        javadoc
-Summary:        Javadoc for %{name}
-
+Summary:        API documentation for %{pkg_name}
 
 %description    javadoc
-Javadoc for %{name}.
+This package provides %{summary}.
 
 %prep
 %setup -q -n asm-%{version}
-%patch0 -p1
-perl -pi -e 's/\r$//g' LICENSE.txt README.txt
+find -name *.jar -delete
 
-mkdir META-INF
-cp -p %{SOURCE1} META-INF/MANIFEST.MF
+sed -i /Class-Path/d archive/*.bnd
+sed -i "s/Import-Package:/&org.objectweb.asm,org.objectweb.asm.util,/" archive/asm-xml.bnd
+sed -i "s|\${config}/biz.aQute.bnd.jar|`build-classpath aqute-bnd`|" archive/*.xml
+sed -i -e '/kind="lib"/d' -e 's|output/eclipse|output/build|' .classpath
 
 %build
-ant -Dobjectweb.ant.tasks.path=$(build-classpath objectweb-anttask) jar jdoc
+%ant -Dobjectweb.ant.tasks.path= jar jdoc
 
 %install
-# jars
-install -d -m 755 $RPM_BUILD_ROOT%{_javadir}/%{name}
-install -d -m 755 $RPM_BUILD_ROOT%{_mavenpomdir}
-
-for jar in output/dist/lib/*.jar; do
-install -m 644 ${jar} \
-$RPM_BUILD_ROOT%{_javadir}/%{name}/`basename ${jar/-%{version}/}`
+%{?scl:scl enable %{scl} - <<"EOF"}
+%mvn_artifact output/dist/lib/asm-parent-%{version}.pom
+for m in asm asm-analysis asm-commons asm-tree asm-util asm-xml all/asm-all all/asm-debug-all; do
+    %mvn_artifact output/dist/lib/${m}-%{version}.pom \
+                  output/dist/lib/${m}-%{version}.jar
 done
+%mvn_install -J output/dist/doc/javadoc/user
+%{?scl:EOF}
 
-touch META-INF/MANIFEST.MF
-zip -u output/dist/lib/all/asm-all-%{version}.jar META-INF/MANIFEST.MF
+%jpackage_script org.objectweb.asm.xml.Processor "" "" %{pkg_name}/asm:%{pkg_name}/asm-attrs:%{pkg_name}/asm-util:%{pkg_name}/asm-xml %{pkg_name}-processor true
 
-install -m 644 output/dist/lib/all/asm-all-%{version}.jar $RPM_BUILD_ROOT%{_javadir}/%{name}/asm-all.jar
-install -m 644 output/dist/lib/all/asm-all-%{version}.pom $RPM_BUILD_ROOT%{_mavenpomdir}/JPP.objectweb-asm-asm-all.pom
-
-# pom
-for pom in output/dist/lib/*.pom; do
-install -m 644 ${pom} $RPM_BUILD_ROOT%{_mavenpomdir}/JPP.objectweb-asm-`basename ${pom/-%{version}/}`
-done
-%add_maven_depmap JPP.objectweb-asm-asm.pom %{name}/asm.jar
-%add_maven_depmap JPP.objectweb-asm-asm-analysis.pom %{name}/asm-analysis.jar
-%add_maven_depmap JPP.objectweb-asm-asm-commons.pom %{name}/asm-commons.jar
-%add_maven_depmap JPP.objectweb-asm-asm-tree.pom %{name}/asm-tree.jar
-%add_maven_depmap JPP.objectweb-asm-asm-util.pom %{name}/asm-util.jar
-%add_maven_depmap JPP.objectweb-asm-asm-xml.pom %{name}/asm-xml.jar
-%add_maven_depmap JPP.objectweb-asm-asm-all.pom %{name}/asm-all.jar -a "org.eclipse.jetty.orbit:org.objectweb.asm"
-%add_maven_depmap JPP.objectweb-asm-asm-parent.pom
-
-# javadoc
-install -p -d -m 755 $RPM_BUILD_ROOT%{_javadocdir}/%{name}
-cp -pr output/dist/doc/javadoc/user/* $RPM_BUILD_ROOT%{_javadocdir}/%{name}
-
-%files
+%files -f .mfiles
 %doc LICENSE.txt README.txt
-%dir %{_javadir}/%{name}
-%{_javadir}/%{name}/*.jar
-%{_mavenpomdir}/*
-%{_mavendepmapfragdir}/*
+%{_bindir}/%{pkg_name}-processor
+%dir %{_javadir}/%{pkg_name}
 
-%files javadoc
-%{_javadocdir}/%{name}
+%files javadoc -f .mfiles-javadoc
+%doc LICENSE.txt
 
 %changelog
+* Sun Jul 20 2014 Mikolaj Izdebski <mizdebsk@redhat.com> - 5.0.3-1
+- Update to upstream version 5.0.3
+
+* Sat Jun 07 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 5.0.2-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
+
+* Mon May  5 2014 Mikolaj Izdebski <mizdebsk@redhat.com> - 5.0.2-1
+- Update to upstream version 5.0.2
+
+* Mon Apr 14 2014 Mat Booth <mat.booth@redhat.com> - 5.0.1-2
+- SCL-ize package.
+- Fix bogus dates in changelog.
+
+* Mon Mar 24 2014 Mikolaj Izdebski <mizdebsk@redhat.com> - 5.0.1-1
+- Update to upstream version 5.0.1
+
+* Wed Mar 19 2014 Mikolaj Izdebski <mizdebsk@redhat.com> - 5.0-0.3.beta
+- Enable asm-debug-all module
+
+* Mon Jan 20 2014 Mikolaj Izdebski <mizdebsk@redhat.com> - 5.0-0.2.beta
+- Remove Eclipse Orbit alias
+
+* Tue Dec  3 2013 Mikolaj Izdebski <mizdebsk@redhat.com> - 5.0-0.1.beta
+- Update to 5.0 beta
+
 * Sat Aug 03 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0:3.3.1-8
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
 
@@ -159,10 +134,10 @@ cp -pr output/dist/doc/javadoc/user/* $RPM_BUILD_ROOT%{_javadocdir}/%{name}
 * Wed Feb 25 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0:3.1-6.1
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_11_Mass_Rebuild
 
-* Tue Oct 23 2008 David Walluck <dwalluck@redhat.com> 0:3.1-5.1
+* Thu Oct 23 2008 David Walluck <dwalluck@redhat.com> 0:3.1-5.1
 - build for Fedora
 
-* Tue Oct 23 2008 David Walluck <dwalluck@redhat.com> 0:3.1-5
+* Thu Oct 23 2008 David Walluck <dwalluck@redhat.com> 0:3.1-5
 - add OSGi manifest (Alexander Kurtakov)
 
 * Mon Oct 20 2008 David Walluck <dwalluck@redhat.com> 0:3.1-4
@@ -197,3 +172,4 @@ cp -pr output/dist/doc/javadoc/user/* $RPM_BUILD_ROOT%{_javadocdir}/%{name}
 
 * Fri Mar 11 2005 Sebastiano Vigna <vigna at acm.org> 0:2.0.RC1-1jpp
 - First release of the 2.0 line.
+
