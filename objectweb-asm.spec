@@ -5,6 +5,7 @@ Summary:        Java bytecode manipulation and analysis framework
 License:        BSD
 URL:            http://asm.ow2.org/
 BuildArch:      noarch
+BuildRequires:	jdk-current
 
 Source0:        https://repository.ow2.org/nexus/content/repositories/releases/org/ow2/asm/asm/%{version}/asm-%{version}-sources.jar
 Source1:        https://repository.ow2.org/nexus/content/repositories/releases/org/ow2/asm/asm/%{version}/asm-%{version}.pom
