@@ -1,4 +1,2 @@
-removed_sources:
-  asm-3.3.1.tar.gz: 230c4a99ca8436a584b9a322b4fe7a585f5b084e
 sources:
-  asm-5.0.3.tar.gz: 3506fa9e4c262184578f06d24627dcc9e570783f
+  asm-7.1-sources.jar: 9d170062d595240da35301362b079e5579c86f49
