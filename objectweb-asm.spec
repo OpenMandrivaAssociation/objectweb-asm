@@ -1,6 +1,6 @@
 Name:           objectweb-asm
 Version:        7.1
-Release:        2
+Release:        3
 Summary:        Java bytecode manipulation and analysis framework
 License:        BSD
 URL:            http://asm.ow2.org/
@@ -34,6 +34,7 @@ export PATH=$JAVA_HOME/bin:$PATH
 cat >module-info.java <<'EOF'
 module org.objectweb.asm {
 	exports org.objectweb.asm;
+	exports org.objectweb.asm.signature;
 }
 EOF
 find . -name "*.java" |xargs javac
