@@ -1,6 +1,6 @@
 Name:           objectweb-asm
 Version:        7.1
-Release:        1
+Release:        2
 Summary:        Java bytecode manipulation and analysis framework
 License:        BSD
 URL:            http://asm.ow2.org/
@@ -43,14 +43,19 @@ jar cf asm-%{version}.jar META-INF org module-info.class
 cp %{S:1} .
 
 %install
-mkdir -p %{buildroot}%{_javadir} %{buildroot}%{_mavenpomdir} %{buildroot}%{_javadocdir}
+mkdir -p %{buildroot}%{_javadir}/modules %{buildroot}%{_mavenpomdir} %{buildroot}%{_javadocdir}
 cp asm-%{version}.jar %{buildroot}%{_javadir}
 cp *.pom %{buildroot}%{_mavenpomdir}/
 %add_maven_depmap asm-%{version}.pom asm-%{version}.jar
 cp -a docs %{buildroot}%{_javadocdir}/org.objectweb.asm
+mv %{buildroot}%{_javadir}/*.jar %{buildroot}%{_javadir}/modules/
+ln -s modules/asm-%{version}.jar %{buildroot}%{_javadir}/
+ln -s modules/asm-%{version}.jar %{buildroot}%{_javadir}/asm.jar
+ln -s modules/asm-%{version}.jar %{buildroot}%{_javadir}/org.objectweb.asm.jar
 
 %files -f .mfiles
-%{_javadir}/asm-%{version}.jar
+%{_javadir}/*.jar
+%{_javadir}/modules/*.jar
 
 %files javadoc
 %{_javadocdir}/org.objectweb.asm
