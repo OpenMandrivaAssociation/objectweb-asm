@@ -1,6 +1,6 @@
 Name:           objectweb-asm
 Version:        7.1
-Release:        3
+Release:        4
 Summary:        Java bytecode manipulation and analysis framework
 License:        BSD
 URL:            http://asm.ow2.org/
