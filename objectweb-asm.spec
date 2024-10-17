@@ -3,7 +3,7 @@ Version:        7.1
 Release:        4
 Summary:        Java bytecode manipulation and analysis framework
 License:        BSD
-URL:            http://asm.ow2.org/
+URL:            https://asm.ow2.org/
 BuildArch:      noarch
 BuildRequires:	jdk-current
 BuildRequires:	javapackages-local
