@@ -1,5 +1,5 @@
 Name:           objectweb-asm
-Version:        9.7.1
+Version:        9.10.1
 Release:        1
 Summary:        Java bytecode manipulation and analysis framework
 License:        BSD-3-Clause

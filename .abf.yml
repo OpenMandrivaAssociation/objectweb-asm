@@ -1,3 +1,9 @@
 sources:
   asm-7.1-sources.jar: 9d170062d595240da35301362b079e5579c86f49
-  objectweb-asm-9.7.1.tar.gz: 7aa64fdfc299c0c31dae34f87db45c5446ffbcdc
+  asm-9.10.1.pom: 507e7f8821c58fc995a057b63ad4008b96bafa4d
+  asm-analysis-9.10.1.pom: cf2754cfa5e4df15ccf9f8779485f23862c5b488
+  asm-commons-9.10.1.pom: a28039cb619a6c2a5c7ca5b3206381f9032c8368
+  asm-test-9.10.1.pom: 047d0d031e8b5316904b994263506dbab9b0bc04
+  asm-tree-9.10.1.pom: 0fe218ecae48cabf4e53295d64ae4e01e5ddfb33
+  asm-util-9.10.1.pom: c6db0976b79a615802b820b08664602fa1f6a5ad
+  objectweb-asm-9.10.1.tar.gz: 06f1e0c69d7bba844ec03f22c37f9df43e883575

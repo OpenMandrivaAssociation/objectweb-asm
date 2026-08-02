@@ -1,7 +1,9 @@
-From 756ccf40723d9ba68872252810f3dbb2b186be0c Mon Sep 17 00:00:00 2001
 From: forax <forax@univ-mlv.fr>
 Date: Tue, 10 Dec 2024 11:11:49 +0100
-Subject: [PATCH] Add support of Java 25
+Subject: [PATCH] Add support of Java 25 (rebased: extend to V28 for 9.10.1)
+
+Upstream 9.10.1 already includes V25-V27. Keep the packaging intent of
+forward-compatible class-file version support by adding V28.
 
 ---
  asm-util/src/main/java/org/objectweb/asm/util/ASMifier.java | 1 +
@@ -11,54 +13,47 @@ Subject: [PATCH] Add support of Java 25
  4 files changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/asm-util/src/main/java/org/objectweb/asm/util/ASMifier.java b/asm-util/src/main/java/org/objectweb/asm/util/ASMifier.java
-index 4ede9201..9ce9f1c6 100644
 --- a/asm-util/src/main/java/org/objectweb/asm/util/ASMifier.java
 +++ b/asm-util/src/main/java/org/objectweb/asm/util/ASMifier.java
-@@ -114,6 +114,7 @@ public class ASMifier extends Printer {
-     classVersions.put(Opcodes.V22, "V22");
-     classVersions.put(Opcodes.V23, "V23");
-     classVersions.put(Opcodes.V24, "V24");
-+    classVersions.put(Opcodes.V25, "V25");
+@@ -117,6 +117,7 @@ public class ASMifier extends Printer {
+     classVersions.put(Opcodes.V25, "V25");
+     classVersions.put(Opcodes.V26, "V26");
+     classVersions.put(Opcodes.V27, "V27");
++    classVersions.put(Opcodes.V28, "V28");
      CLASS_VERSIONS = Collections.unmodifiableMap(classVersions);
    }
  
 diff --git a/asm/src/main/java/org/objectweb/asm/ClassReader.java b/asm/src/main/java/org/objectweb/asm/ClassReader.java
-index 33b2a300..5f66ed2b 100644
 --- a/asm/src/main/java/org/objectweb/asm/ClassReader.java
 +++ b/asm/src/main/java/org/objectweb/asm/ClassReader.java
 @@ -195,7 +195,7 @@ public class ClassReader {
      this.b = classFileBuffer;
      // Check the class' major_version. This field is after the magic and minor_version fields, which
      // use 4 and 2 bytes respectively.
--    if (checkClassVersion && readShort(classFileOffset + 6) > Opcodes.V24) {
-+    if (checkClassVersion && readShort(classFileOffset + 6) > Opcodes.V25) {
+-    if (checkClassVersion && readShort(classFileOffset + 6) > Opcodes.V27) {
++    if (checkClassVersion && readShort(classFileOffset + 6) > Opcodes.V28) {
        throw new IllegalArgumentException(
            "Unsupported class file major version " + readShort(classFileOffset + 6));
      }
 diff --git a/asm/src/main/java/org/objectweb/asm/Opcodes.java b/asm/src/main/java/org/objectweb/asm/Opcodes.java
-index 9aa8a3b0..4ed95869 100644
 --- a/asm/src/main/java/org/objectweb/asm/Opcodes.java
 +++ b/asm/src/main/java/org/objectweb/asm/Opcodes.java
-@@ -290,6 +290,7 @@ public interface Opcodes {
-   int V22 = 0 << 16 | 66;
-   int V23 = 0 << 16 | 67;
-   int V24 = 0 << 16 | 68;
-+  int V25 = 0 << 16 | 69;
+@@ -294,6 +294,7 @@ public interface Opcodes {
+   int V25 = 0 << 16 | 69;
+   int V26 = 0 << 16 | 70;
+   int V27 = 0 << 16 | 71;
++  int V28 = 0 << 16 | 72;
  
    /**
     * Version flag indicating that the class is using 'preview' features.
 diff --git a/asm/src/test/java/org/objectweb/asm/ConstantsTest.java b/asm/src/test/java/org/objectweb/asm/ConstantsTest.java
-index e7af1d04..543ba044 100644
 --- a/asm/src/test/java/org/objectweb/asm/ConstantsTest.java
 +++ b/asm/src/test/java/org/objectweb/asm/ConstantsTest.java
-@@ -257,6 +257,7 @@ class ConstantsTest {
-       case "V22":
-       case "V23":
-       case "V24":
-+      case "V25":
+@@ -260,6 +260,7 @@ class ConstantsTest {
+       case "V25":
+       case "V26":
+       case "V27":
++      case "V28":
          return ConstantType.CLASS_VERSION;
        case "ACC_PUBLIC":
        case "ACC_PRIVATE":
--- 
-2.48.1
-
