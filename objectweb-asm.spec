@@ -1,64 +1,77 @@
-Name:           objectweb-asm
-Version:        9.10.1
-Release:        1
-Summary:        Java bytecode manipulation and analysis framework
-License:        BSD-3-Clause
-URL:            https://asm.ow2.org/
-BuildArch:      noarch
-
-# ./generate-tarball.sh
-Source0:        %{name}-%{version}.tar.gz
-Source1:        aggregator.pom
-Source2:        https://repo1.maven.org/maven2/org/ow2/asm/asm/%{version}/asm-%{version}.pom
-Source3:        https://repo1.maven.org/maven2/org/ow2/asm/asm-analysis/%{version}/asm-analysis-%{version}.pom
-Source4:        https://repo1.maven.org/maven2/org/ow2/asm/asm-commons/%{version}/asm-commons-%{version}.pom
-Source5:        https://repo1.maven.org/maven2/org/ow2/asm/asm-test/%{version}/asm-test-%{version}.pom
-Source6:        https://repo1.maven.org/maven2/org/ow2/asm/asm-tree/%{version}/asm-tree-%{version}.pom
-Source7:        https://repo1.maven.org/maven2/org/ow2/asm/asm-util/%{version}/asm-util-%{version}.pom
-# The source contains binary jars that cannot be verified for licensing and could be proprietary
-Source9:        generate-tarball.sh
-Source10:       tools-retrofitter.pom
-
-Patch1:         0001-Add-support-of-Java-25.patch
-
-BuildRequires:  javapackages-bootstrap
+Name:		objectweb-asm
+Version:	9.11.1
+Release:	1
+Summary:	Java bytecode manipulation framework
+Group:		Development/Java
+License:	BSD
+URL:		https://asm.ow2.io/
+%global asm_tag %(echo %{version} | tr '.' '_')
+Source0:	https://gitlab.ow2.org/asm/asm/-/archive/ASM_%{asm_tag}/asm-ASM_%{asm_tag}.tar.gz
+BuildArch:	noarch
+BuildRequires:	python
+BuildSystem:	maven
 
 %description
-ASM is an all purpose Java bytecode manipulation and analysis
-framework.  It can be used to modify existing classes or dynamically
-generate classes, directly in binary form.  Provided common
-transformations and analysis algorithms allow to easily assemble
-custom complex transformations and code analysis tools.
+ASM is a Java bytecode analysis and manipulation framework.
 
 %prep
-%autosetup -p1 -C
+%setup -q -n asm-ASM_%{asm_tag}
+# Gradle would download its wrapper. These modules are plain Java.
+# Release 11 matches upstream sourceCompatibility.
+python - %{version} <<'PY'
+import sys
+from pathlib import Path
 
-# A custom pom to aggregate the build
-cp -p %{SOURCE1} pom.xml
-
-cp -p %{SOURCE10} tools/retrofitter/pom.xml
-
-# Insert poms into modules
-for pom in asm asm-analysis asm-commons asm-test asm-tree asm-util; do
-  cp -p ${RPM_SOURCE_DIR}/${pom}-%{version}.pom ${pom}/pom.xml
-  %pom_add_dep org.fedoraproject.xmvn.objectweb-asm:tools-retrofitter::provided ${pom}
-  %pom_add_plugin org.apache.maven.plugins:maven-antrun-plugin ${pom}
-  %pom_set_parent org.fedoraproject.xmvn.objectweb-asm:aggregator:any ${pom}
-  %pom_xpath_inject pom:parent '<relativePath>..</relativePath>' ${pom}
-done
-
-# Don't ship poms used for build only
-%mvn_package :aggregator __noinstall
-%mvn_package :tools-retrofitter __noinstall
-
-# Don't ship the test framework to avoid runtime dep on junit
-%mvn_package :asm-test __noinstall
-
-%build
-%mvn_build -j -f -- -Dmaven.compiler.source=1.8 -Dmaven.compiler.target=1.8
-
-%install
-%mvn_install
+version = sys.argv[1]
+modules = [
+    ("asm", []),
+    ("asm-tree", ["asm"]),
+    ("asm-analysis", ["asm-tree"]),
+    ("asm-commons", ["asm", "asm-tree"]),
+    ("asm-util", ["asm", "asm-tree", "asm-analysis"]),
+]
+names = "\n".join(f"    <module>{name}</module>" for name, _deps in modules)
+Path("pom.xml").write_text(f"""<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.ow2.asm</groupId>
+  <artifactId>asm-parent</artifactId>
+  <version>{version}</version>
+  <packaging>pom</packaging>
+  <name>ASM</name>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>11</maven.compiler.release>
+  </properties>
+  <modules>
+{names}
+  </modules>
+</project>
+""")
+for name, deps in modules:
+    body = ""
+    if deps:
+        lines = []
+        for dep in deps:
+            lines.append(f"""    <dependency>
+      <groupId>org.ow2.asm</groupId>
+      <artifactId>{dep}</artifactId>
+      <version>{version}</version>
+    </dependency>""")
+        body = "  <dependencies>\n" + "\n".join(lines) + "\n  </dependencies>\n"
+    Path(name, "pom.xml").write_text(f"""<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.ow2.asm</groupId>
+    <artifactId>asm-parent</artifactId>
+    <version>{version}</version>
+  </parent>
+  <artifactId>{name}</artifactId>
+  <name>{name}</name>
+{body}</project>
+""")
+PY
 
 %files -f .mfiles
-%license LICENSE.txt
+%doc LICENSE.txt README.md
