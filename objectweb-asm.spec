@@ -9,6 +9,9 @@ URL:		https://asm.ow2.io/
 Source0:	https://gitlab.ow2.org/asm/asm/-/archive/ASM_%{asm_tag}/asm-ASM_%{asm_tag}.tar.gz
 BuildArch:	noarch
 BuildRequires:	python
+# Literal, so the first rpmbuild -bs records them before sysjar is installed.
+BuildRequires:	maven
+BuildRequires:	java-current-devel
 BuildSystem:	maven
 
 %description
